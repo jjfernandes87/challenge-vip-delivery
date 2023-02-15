@@ -7,12 +7,6 @@
 
 import UIKit
 
-// TODO: - Move to suitable file && folder
-struct AddressListViewModel {
-    var title: String
-    var subtitle: String
-}
-
 protocol AddressListViewProtocol where Self: UIView {
     func show(viewModelList: [AddressListViewModel]) -> Void
 }
@@ -81,7 +75,7 @@ extension AddressListView: UITableViewDataSource {
 
         let viewModel = viewModelList[indexPath.row]
 
-        cell.populate(with: viewModel.title, andSubtitle: viewModel.subtitle)
+        cell.populate(with: viewModel.street, andSubtitle: viewModel.neighborhood)
 
         return cell
     }

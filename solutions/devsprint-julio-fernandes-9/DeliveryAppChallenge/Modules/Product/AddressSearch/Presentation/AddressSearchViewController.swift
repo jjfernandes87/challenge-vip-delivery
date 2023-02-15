@@ -8,11 +8,11 @@
 import UIKit
 
 protocol AddressSearchViewControllerProtocol where Self: UIViewController {
-
+    func displayViewModel(_ viewModel: AddressSearch.ViewModel)
 }
 
 final class AddressSearchViewController: UIViewController, AddressSearchViewControllerProtocol {
-
+    
     // TODO: Should one inject such dependency?
     let searchController = UISearchController(searchResultsController: nil)
 
@@ -22,11 +22,10 @@ final class AddressSearchViewController: UIViewController, AddressSearchViewCont
     // MARK: - VIP Lifecycle dependencies
     private let interactor: AddressSearchInteractorProtocol
 
-    init(with addresslistView: AddressListViewProtocol, and interactor: AddressSearchInteractorProtocol) {
+    init(addresslistView: AddressListViewProtocol, interactor: AddressSearchInteractorProtocol) {
         self.addresslistView = addresslistView
         self.interactor = interactor
         super.init(nibName: nil, bundle: nil)
-        setupDelegatesAndNavigation()
     }
 
     required init?(coder: NSCoder) { nil }
@@ -37,17 +36,26 @@ final class AddressSearchViewController: UIViewController, AddressSearchViewCont
     }
 
     override func viewDidLoad() {
+        super.viewDidLoad()
         navigationController?.navigationBar.prefersLargeTitles = true
-        addresslistView.show(viewModelList: [.init(title: "Test title 1", subtitle: "Test subtitle 1"),
-                                             .init(title: "Test title 2", subtitle: "Test subtitle 2"),
-                                             .init(title: "Test title 3", subtitle: "Test subtitle 3"),
-                                             .init(title: "Test title 4", subtitle: "Test subtitle 4")])
+        interactor.doRequest(.fetchDataView)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupDelegatesAndNavigation()
     }
+    
+    func displayViewModel(_ viewModel: AddressSearch.ViewModel) {
+        switch viewModel {
+        case let .dataView(viewEntity):
+            DispatchQueue.main.async { [weak self] in
+                self?.addresslistView.show(viewModelList: viewEntity)
+            }
+        case let .dataViewWithError(message): print(message)
+        }
+    }
+    
 }
 
 extension AddressSearchViewController {
@@ -66,13 +74,15 @@ extension AddressSearchViewController {
 extension AddressSearchViewController: UISearchResultsUpdating {
 
     func updateSearchResults(for searchController: UISearchController) {
-        // Should trigger interactor?
+        if let text = searchController.searchBar.text, text.count >= 3 {
+            interactor.doRequest(.filterBy(filter: text))
+        }
     }
 }
 
 extension AddressSearchViewController: UISearchBarDelegate, UISearchControllerDelegate {
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        // Triggers interactor
+        print("searchBarTextDidEndEditing: \(searchBar.text)")
     }
 }
